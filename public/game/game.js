@@ -3,10 +3,11 @@
 var Node = require('./node');
 var Line = require('./line');
 
-Board = function(game, width, height) {
+Board = function(game, level, width, height) {
   var _this = this;
 
   this.game = game;
+  this.level = level;
 
   this.container = new PIXI.DisplayObjectContainer();
 
@@ -18,24 +19,25 @@ Board = function(game, width, height) {
   this.spacing = 100;
 
   this.nodes = [];
+  this.lines = [];
   this.setup();
 
-  this.line = new Line(game, 0, 0);
-  this.container.addChild(this.line.graphics);
+  this.activeLine = new Line(game, 0, 0);
+  this.activeLine.graphics.visible = false;
+  this.container.addChild(this.activeLine.graphics);
+
+  this.activeNode = null;
+
+  this.active = false;
 
   this.container.setInteractive(true);
   this.container.hitArea = new PIXI.Rectangle(0, 0, this.getWidth(), this.getHeight());
-  this.container.click = function(event) {
-    var point = event.getLocalPosition(_this.container);
-
-    _this.line.setEnd(point.x, point.y);
-  }
 }
 
 Board.prototype.setup = function() {
   for(var x = 0; x < this.width; x++) {
     for(var y = 0; y < this.height; y++) {
-      var node = new Node(this, x * this.spacing, y * this.spacing);
+      var node = new Node(this.game, this, x * this.spacing + 50, y * this.spacing + 50);
       this.container.addChild(node.graphics);
       this.nodes.push(node);
     }
@@ -47,17 +49,24 @@ Board.prototype.update = function(delta) {
 }
 
 Board.prototype.draw = function(renderer, delta) {
-  this.graphics.clear();
-  this.graphics.beginFill(0xCCCCCC, 0.5);
-  this.graphics.drawRect(0, 0, this.getWidth(), this.getHeight());
-  this.graphics.endFill();
+  if(this.active) {
+    this.graphics.clear();
+    this.graphics.beginFill(0xCCCCCC, 0.5);
+    this.graphics.drawRect(0, 0, this.getWidth(), this.getHeight());
+    this.graphics.endFill();
+  }
+  else {
+    this.graphics.clear();
+  }
 
-  this.line.draw(renderer, delta);
+  this.activeLine.draw(renderer, delta);
 
   for(var i = 0; i < this.nodes.length; i++) {
-    var node = this.nodes[i];
+    this.nodes[i].draw(renderer, delta);
+  }
 
-    node.draw(renderer, delta);
+  for(var i = 0; i < this.lines.length; i++) {
+    this.lines[i].draw(renderer, delta);
   }
 }
 
@@ -67,6 +76,43 @@ Board.prototype.getWidth = function() {
 
 Board.prototype.getHeight = function() {
   return this.height * this.spacing;
+}
+
+Board.prototype.setActive = function(value) {
+  this.active = value;
+}
+
+Board.prototype.saveLine = function(line) {
+  this.lines.push(line);
+  this.container.addChild(line.graphics)
+}
+
+Board.prototype.onNodePress = function(node) {
+  var index = this.nodes.indexOf(node);
+  var oppositeNode = this.level.getOppositeNode(this, index);
+  var oppositeBoard = this.level.getOppositeBoard(this);
+    
+  if(this.activeLine.graphics.visible == false) {
+    node.selected = true;
+    this.activeNode = node;
+    oppositeNode.open = false;
+
+    this.activeLine.setBegin(node.x, node.y);
+    this.activeLine.setEnd(node.x, node.y);
+    this.activeLine.graphics.visible = true;
+  }
+  else {
+    this.activeNode.selected = false;
+    this.activeNode.open = false;
+    this.activeNode = null;
+
+    this.activeLine.setEnd(node.x, node.y);
+    this.saveLine(this.activeLine.clone());
+    this.activeLine.graphics.visible = false;
+    this.level.switchBoard();
+
+    oppositeBoard.onNodePress(oppositeNode);
+  }
 }
 
 module.exports = Board;
@@ -80,12 +126,13 @@ Level = function(game, difficulty) {
 
   this.container = new PIXI.DisplayObjectContainer();
 
-  this.frontBoard = new Board(this, 3, 3);
+  this.frontBoard = new Board(game, this, 3, 3);
   this.frontBoard.container.position.x = 50;
   this.frontBoard.container.position.y = 100;
+  this.frontBoard.setActive(true);
   this.container.addChild(this.frontBoard.container);
 
-  this.backBoard = new Board(this, 3, 3);
+  this.backBoard = new Board(game, this, 3, 3);
   this.backBoard.container.position.x = 450;
   this.backBoard.container.position.y = 100;
   this.container.addChild(this.backBoard.container);
@@ -100,6 +147,35 @@ Level.prototype.draw = function(renderer, delta) {
   this.backBoard.draw(renderer, delta);
 }
 
+Level.prototype.switchBoard = function() {
+  if(this.frontBoard.active) {
+    this.frontBoard.setActive(false);
+    this.backBoard.setActive(true);
+  }
+  else {
+    this.frontBoard.setActive(true);
+    this.backBoard.setActive(false);
+  }
+}
+
+Level.prototype.getOppositeNode = function(board, index) {
+  if(board == this.frontBoard) {
+    return this.backBoard.nodes[index];
+  }
+  else {
+    return this.frontBoard.nodes[index];
+  }
+}
+
+Level.prototype.getOppositeBoard = function(board) {
+  if(board == this.frontBoard) {
+    return this.backBoard;
+  }
+  else {
+    return this.frontBoard;
+  }
+}
+
 module.exports = Level;
 }).call(this,require("/home/andre/projects/ludum-dare-29/node_modules/gulp-browserify/node_modules/browserify/node_modules/insert-module-globals/node_modules/process/browser.js"),typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/entities/level.js","/entities")
 },{"./board":1,"/home/andre/projects/ludum-dare-29/node_modules/gulp-browserify/node_modules/browserify/node_modules/insert-module-globals/node_modules/process/browser.js":13,"buffer":9}],3:[function(require,module,exports){
@@ -108,6 +184,7 @@ Line = function(game, x, y) {
   this.game = game;
 
   this.graphics = new PIXI.Graphics();
+  this.active = false;
 
   this.begin = new PIXI.Point(x, y);
   this.end = new PIXI.Point(x, y);
@@ -120,7 +197,13 @@ Line.prototype.update = function(delta) {
 Line.prototype.draw = function(renderer, delta) {
   this.graphics.clear();
 
-  this.graphics.lineStyle(1, 0x000000, 1);
+  if(this.active) {
+    this.graphics.lineStyle(4, 0x000000, 1);
+  }
+  else {
+    this.graphics.lineStyle(4, 0x888888, 1);
+  }
+
   this.graphics.moveTo(this.begin.x, this.begin.y);
   this.graphics.lineTo(this.end.x, this.end.y);
 }
@@ -135,13 +218,29 @@ Line.prototype.setEnd = function(x, y) {
   this.end.y = y;
 }
 
+Line.prototype.setActive = function(value) {
+  this.active = value;
+}
+
+Line.prototype.clone = function() {
+  var line = new Line(this.game, this.x, this.y);
+  line.setBegin(this.begin.x, this.begin.y);
+  line.setEnd(this.end.x, this.end.y);
+
+  return line;
+}
+
 module.exports = Line;
 }).call(this,require("/home/andre/projects/ludum-dare-29/node_modules/gulp-browserify/node_modules/browserify/node_modules/insert-module-globals/node_modules/process/browser.js"),typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/entities/line.js","/entities")
 },{"/home/andre/projects/ludum-dare-29/node_modules/gulp-browserify/node_modules/browserify/node_modules/insert-module-globals/node_modules/process/browser.js":13,"buffer":9}],4:[function(require,module,exports){
 (function (process,global,Buffer,__argument0,__argument1,__argument2,__argument3,__filename,__dirname){
-Node = function(game, x, y) {
+Node = function(game, board, x, y) {
   var _this = this;
   this.game = game;
+  this.board = board;
+
+  this.x = x;
+  this.y = y;
 
   this.graphics = new PIXI.Graphics();
 
@@ -149,10 +248,12 @@ Node = function(game, x, y) {
   this.graphics.position.y = y;
 
   this.radius = 25;
+  this.selected = false;
+  this.open = true;
 
   this.graphics.hitArea = new PIXI.Rectangle(
-    this.radius - 5, 
-    this.radius - 5, 
+    -5 - this.radius, 
+    -5 - this.radius, 
     this.radius * 2 + 10, 
     this.radius * 2 + 10
     );
@@ -162,7 +263,8 @@ Node = function(game, x, y) {
   this.states = {
     NORMAL: 0,
     HOVER: 1,
-    PRESSED: 2
+    PRESSED: 2,
+    ACTIVE: 3
   };
   this.state = this.states.NORMAL;
 
@@ -178,33 +280,56 @@ Node.prototype.draw = function(renderer, delta) {
   this.graphics.clear();
   var color = this.color;
 
-  if(this.state == this.states.NORMAL) {
-    this.color = 0xff0000;
-  }
-  else if(this.state == this.states.HOVER) {
-    this.color = 0x00ff00;
-  }
-  else if(this.state == this.states.PRESSED) {
-    this.color = 0x0000ff;
-  }
+  if(this.open) {
+    if(this.state == this.states.NORMAL) {
+      this.color = 0xff0000;
+    }
+    else if(this.state == this.states.HOVER) {
+      this.color = 0x00ff00;
+    }
+    else if(this.state == this.states.PRESSED) {
+      this.color = 0x0000ff;
+    }
+    else if(this.state == this.states.ACTIVE) {
+      this.color = 0x0000ff;
+    }
 
-  this.graphics.lineStyle(2, this.color, 1);
-  this.graphics.drawCircle(this.radius * 2, this.radius * 2, this.radius);
+    this.graphics.lineStyle(2, this.color, 1);
+    this.graphics.drawCircle(0, 0, this.radius);
+
+    if(this.selected) {
+      this.graphics.beginFill(this.color);
+      this.graphics.drawCircle(0, 0, this.radius / 4);
+      this.graphics.endFill();
+    }
+  }
+  else {
+    this.graphics.beginFill(0xCCCCCC);
+    this.graphics.drawCircle(0, 0, this.radius);
+    this.graphics.endFill();
+  }
 }
 
 Node.prototype.registerEvents = function() {
   var _this = this;
 
   var setStateNormal = function() {
-    _this.state = _this.states.NORMAL;
+    if(_this.board.active) {
+      _this.state = _this.states.NORMAL;
+    }
   }
 
   var setStatePressed = function() {
-    _this.state = _this.states.PRESSED;
+    if(_this.board.active) {
+      _this.state = _this.states.ACTIVE;
+      _this.board.onNodePress(_this);
+    }
   }
 
   var setStateHover = function() {
-    _this.state = _this.states.HOVER;
+    if(_this.board.active) {
+      _this.state = _this.states.HOVER;
+    }
   }
 
   this.graphics.mouseover = setStateHover;
@@ -236,7 +361,7 @@ var Grid = require('./utils/grid');
 Game = function() {
   var _this = this;
 
-  this.renderer = new PIXI.CanvasRenderer(800, 600);
+  this.renderer = new PIXI.CanvasRenderer(800, 500);
 
   this.loop = new Gameloop({
     renderer: this.renderer
@@ -282,7 +407,7 @@ Game.prototype.draw = function(renderer, delta) {
 }
 
 module.exports = Game;
-}).call(this,require("/home/andre/projects/ludum-dare-29/node_modules/gulp-browserify/node_modules/browserify/node_modules/insert-module-globals/node_modules/process/browser.js"),typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/fake_a8e76ef7.js","/")
+}).call(this,require("/home/andre/projects/ludum-dare-29/node_modules/gulp-browserify/node_modules/browserify/node_modules/insert-module-globals/node_modules/process/browser.js"),typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/fake_9f62648c.js","/")
 },{"./entities/level":2,"./utils/grid":6,"/home/andre/projects/ludum-dare-29/node_modules/gulp-browserify/node_modules/browserify/node_modules/insert-module-globals/node_modules/process/browser.js":13,"buffer":9,"gameloop":7}],6:[function(require,module,exports){
 (function (process,global,Buffer,__argument0,__argument1,__argument2,__argument3,__filename,__dirname){
 Grid = function(game) {
