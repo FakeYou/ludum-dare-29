@@ -1,3 +1,5 @@
+var _ = require('underscore');
+
 Node = function(game, board, x, y) {
   var _this = this;
   this.game = game;
@@ -22,7 +24,13 @@ Node = function(game, board, x, y) {
     this.radius * 2 + 10
     );
 
-  this.color = 0xff0000;
+  this.colors = {
+    red: { name: 'red', normal: 0xEE0000, hover: 0xFF0000 },
+    green: { name: 'green', normal: 0x00EE00, hover: 0x00FF00 },
+    blue: { name: 'blue', normal: 0x0000EE, hover: 0x0000FF}
+  };
+
+  this.color = this.colors[['red', 'green', 'blue'][Math.floor(Math.random() * 3)]];
 
   this.states = {
     NORMAL: 0,
@@ -42,27 +50,27 @@ Node.prototype.update = function(delta) {
 
 Node.prototype.draw = function(renderer, delta) {
   this.graphics.clear();
-  var color = this.color;
+  var color = 0xFF00FF;
 
   if(this.open) {
     if(this.state == this.states.NORMAL) {
-      this.color = 0xff0000;
+      var color = this.color.normal;
     }
     else if(this.state == this.states.HOVER) {
-      this.color = 0x00ff00;
+      var color = this.color.hover;
     }
     else if(this.state == this.states.PRESSED) {
-      this.color = 0x0000ff;
+      // this.color = 0x0000ff;
     }
     else if(this.state == this.states.ACTIVE) {
-      this.color = 0x0000ff;
+      // this.color = 0x0000ff;
     }
 
-    this.graphics.lineStyle(2, this.color, 1);
+    this.graphics.lineStyle(2, color, 1);
     this.graphics.drawCircle(0, 0, this.radius);
 
     if(this.selected) {
-      this.graphics.beginFill(this.color);
+      this.graphics.beginFill(color);
       this.graphics.drawCircle(0, 0, this.radius / 4);
       this.graphics.endFill();
     }

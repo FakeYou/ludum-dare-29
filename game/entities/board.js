@@ -89,7 +89,7 @@ Board.prototype.onNodePress = function(node) {
   var index = this.nodes.indexOf(node);
   var oppositeNode = this.level.getOppositeNode(this, index);
   var oppositeBoard = this.level.getOppositeBoard(this);
-    
+
   if(this.activeLine.graphics.visible == false) {
     node.selected = true;
     this.activeNode = node;
@@ -99,7 +99,7 @@ Board.prototype.onNodePress = function(node) {
     this.activeLine.setEnd(node.x, node.y);
     this.activeLine.graphics.visible = true;
   }
-  else {
+  else if(this.activeNode.color.name == node.color.name) {
     this.activeNode.selected = false;
     this.activeNode.open = false;
     this.activeNode = null;
