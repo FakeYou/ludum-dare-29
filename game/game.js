@@ -6,7 +6,7 @@ var Grid = require('./utils/grid');
 Game = function() {
   var _this = this;
 
-  this.renderer = new PIXI.CanvasRenderer(800, 500);
+  this.renderer = new PIXI.CanvasRenderer(800, 400);
 
   this.loop = new Gameloop({
     renderer: this.renderer

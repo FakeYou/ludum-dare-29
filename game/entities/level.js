@@ -7,13 +7,13 @@ Level = function(game, difficulty) {
 
   this.frontBoard = new Board(game, this, 3, 3);
   this.frontBoard.container.position.x = 50;
-  this.frontBoard.container.position.y = 100;
+  this.frontBoard.container.position.y = 50;
   this.frontBoard.setActive(true);
   this.container.addChild(this.frontBoard.container);
 
   this.backBoard = new Board(game, this, 3, 3);
   this.backBoard.container.position.x = 450;
-  this.backBoard.container.position.y = 100;
+  this.backBoard.container.position.y = 50;
   this.container.addChild(this.backBoard.container);
 }
 

@@ -128,13 +128,13 @@ Level = function(game, difficulty) {
 
   this.frontBoard = new Board(game, this, 3, 3);
   this.frontBoard.container.position.x = 50;
-  this.frontBoard.container.position.y = 100;
+  this.frontBoard.container.position.y = 50;
   this.frontBoard.setActive(true);
   this.container.addChild(this.frontBoard.container);
 
   this.backBoard = new Board(game, this, 3, 3);
   this.backBoard.container.position.x = 450;
-  this.backBoard.container.position.y = 100;
+  this.backBoard.container.position.y = 50;
   this.container.addChild(this.backBoard.container);
 }
 
@@ -369,7 +369,7 @@ var Grid = require('./utils/grid');
 Game = function() {
   var _this = this;
 
-  this.renderer = new PIXI.CanvasRenderer(800, 500);
+  this.renderer = new PIXI.CanvasRenderer(800, 400);
 
   this.loop = new Gameloop({
     renderer: this.renderer
@@ -415,7 +415,7 @@ Game.prototype.draw = function(renderer, delta) {
 }
 
 module.exports = Game;
-}).call(this,require("/home/andre/projects/ludum-dare-29/node_modules/gulp-browserify/node_modules/browserify/node_modules/insert-module-globals/node_modules/process/browser.js"),typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/fake_2d2dd950.js","/")
+}).call(this,require("/home/andre/projects/ludum-dare-29/node_modules/gulp-browserify/node_modules/browserify/node_modules/insert-module-globals/node_modules/process/browser.js"),typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/fake_a1227711.js","/")
 },{"./entities/level":2,"./utils/grid":6,"/home/andre/projects/ludum-dare-29/node_modules/gulp-browserify/node_modules/browserify/node_modules/insert-module-globals/node_modules/process/browser.js":13,"buffer":9,"gameloop":7}],6:[function(require,module,exports){
 (function (process,global,Buffer,__argument0,__argument1,__argument2,__argument3,__filename,__dirname){
 Grid = function(game) {
