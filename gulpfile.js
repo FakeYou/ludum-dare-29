@@ -29,6 +29,9 @@ gulp.task('browserify', function() {
     .pipe(browserify())
     .pipe(rename('preload.js'))
     .pipe(gulp.dest('public/game'));
+
+  gulp.src('game/assets/*.*', { base: './' })
+    .pipe(gulp.dest('public'));
 });
 
 gulp.task('develop', function() {

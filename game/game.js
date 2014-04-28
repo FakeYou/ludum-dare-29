@@ -1,13 +1,14 @@
 var Gameloop = require('gameloop');
 
 var Level = require('./entities/level');
+var Menu = require('./ui/menu');
 var Grid = require('./utils/grid');
 var Generator = require('./utils/generator');
 
 Game = function() {
   var _this = this;
 
-  this.renderer = new PIXI.CanvasRenderer(800, 800);
+  this.renderer = new PIXI.CanvasRenderer (300, 400);
 
   this.loop = new Gameloop({
     renderer: this.renderer
@@ -35,11 +36,14 @@ Game.prototype.setup = function() {
 
   this.stage = new PIXI.Stage(0xEEEEEE);
 
-  this.grid = new Grid(this);
-  this.stage.addChild(this.grid.graphics);
+  // this.grid = new Grid(this);
+  // this.stage.addChild(this.grid.graphics);
 
   this.level = new Level(this, Generator.difficulties.MEDIUM);
   this.stage.addChild(this.level.container);
+
+  this.menu = new Menu(this, 300, 400);
+  this.stage.addChild(this.menu.container);
 }
 
 Game.prototype.update = function(delta) {
@@ -47,7 +51,7 @@ Game.prototype.update = function(delta) {
 }
 
 Game.prototype.draw = function(renderer, delta) {
-  this.grid.draw(renderer, delta);
+  // this.grid.draw(renderer, delta);
   this.level.draw(renderer, delta);
 
   renderer.render(this.stage);

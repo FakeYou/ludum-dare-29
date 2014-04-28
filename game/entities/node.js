@@ -16,7 +16,7 @@ Node = function(game, board, gridX, gridY, x, y) {
   this.graphics.position.x = x;
   this.graphics.position.y = y;
 
-  this.radius = 25;
+  this.radius = 20;
   this.selected = false;
   this.open = true;
 
@@ -25,12 +25,13 @@ Node = function(game, board, gridX, gridY, x, y) {
     -5 - this.radius, 
     this.radius * 2 + 10, 
     this.radius * 2 + 10
-    );
+  );
 
   this.colors = {
-    red: { name: 'red', normal: 0xEE0000, hover: 0xFF0000 },
-    green: { name: 'green', normal: 0x00EE00, hover: 0x00FF00 },
-    blue: { name: 'blue', normal: 0x0000EE, hover: 0x0000FF}
+    red: { name: 'red', normal: 0xDD0000, hover: 0xFF0000 },
+    green: { name: 'green', normal: 0x00DD00, hover: 0x00FF00 },
+    blue: { name: 'blue', normal: 0x0000DD, hover: 0x0000FF },
+    yellow: { name: 'yellow', normal: 0xDDDD00, hover: 0xFFFF00 }
   };
 
   this.states = {
@@ -51,7 +52,7 @@ Node.prototype.update = function(delta) {
 
 Node.prototype.draw = function(renderer, delta) {
   this.graphics.clear();
-  var color = 0xFF00FF;
+  var color = 0x000000;
 
   if(this.open) {
     if(this.state == this.states.NORMAL) {

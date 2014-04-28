@@ -7,7 +7,7 @@ Generator = function(game) {
 }
 
 Generator.difficulties = {
-  EASY: { width: 2, height: 3, color: 2 },
+  EASY: { width: 2, height: 3, colors: 2 },
   MEDIUM: { width: 3, height: 4, colors: 3 },
   HARD: { width: 4, height: 5, colors: 4 }
 }

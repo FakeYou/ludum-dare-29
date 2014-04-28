@@ -24,6 +24,7 @@ Board = function(game, level, width, height) {
   this.activeLine.graphics.visible = false;
   this.container.addChild(this.activeLine.graphics);
 
+  this.backgroundColor = 0xCCCCCC;
   this.activeNode = null;
 
   this.active = false;
@@ -55,15 +56,10 @@ Board.prototype.update = function(delta) {
 }
 
 Board.prototype.draw = function(renderer, delta) {
-  if(this.active) {
-    this.graphics.clear();
-    this.graphics.beginFill(0xCCCCCC, 0.5);
-    this.graphics.drawRect(0, 0, this.getWidth(), this.getHeight());
-    this.graphics.endFill();
-  }
-  else {
-    this.graphics.clear();
-  }
+  this.graphics.clear();
+  this.graphics.beginFill(this.backgroundColor, 0.5);
+  this.graphics.drawRect(0, 0, this.getWidth(), this.getHeight());
+  this.graphics.endFill();
 
   this.activeLine.draw(renderer, delta);
 
@@ -125,24 +121,46 @@ Board.prototype.onNodePress = function(node) {
   }
 }
 
+Board.prototype.isFilled = function() {
+  for(var i = 0; i < this.nodes.length; i++) {
+    if(this.nodes[i].open && !this.nodes[i].selected) {
+      return false;
+    }
+  }
+
+  return true;
+}
+
+Board.prototype.getPossibleMoves = function(node) {
+  var nodes = [];
+
+  for(var i = 0; i < this.nodes.length; i++) {
+    if(this._isValidLine(node, this.nodes[i])) {
+      nodes.push(this.nodes[i]);
+    }
+  }
+
+  return nodes;
+}
+
 Board.prototype._isValidLine = function(beginNode, endNode) {
   if(beginNode.color.name !== endNode.color.name) {
-    console.log('[Board/_isValidLine] - not a valid line: different color');
+    return false;
+  }
+
+  if(!beginNode.open || !endNode.open) {
     return false;
   }
 
   if(beginNode.board !== endNode.board) {
-    console.log('[Board/_isValidLine] - not a valid line: different board');
     return false;
   }
 
   if(!this._isValidNodeConnection(beginNode, endNode)) {
-    console.log('[Board/_isValidLine] - not a valid line: invalid node connection');
     return false; 
   }
 
   if(this._isCrossingLines(beginNode, endNode)) {
-    console.log('[Board/_isValidLine] - not a valid line: crossing other line');
     return false; 
   }
 
