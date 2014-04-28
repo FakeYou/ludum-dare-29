@@ -1,18 +1,14 @@
 var Board = require('./board');
+var Generator = require('../utils/generator');
 
 Level = function(game, difficulty) {
   this.game = game;
   this.difficulty = difficulty;
 
   this.container = new PIXI.DisplayObjectContainer();
+  this.generator = new Generator(game);
 
   this.generateLevel();
-}
-
-Level.difficulties = {
-  EASY: 0,
-  NORMAL: 1,
-  HARD: 2
 }
 
 Level.prototype.update = function(delta) {
@@ -54,17 +50,13 @@ Level.prototype.getOppositeBoard = function(board) {
 }
 
 Level.prototype.generateLevel = function() {
-  var colors = [];
-  var width = 0;
-  var height = 0;
+  console.log(this.difficulty);
+  var nodes = this.generator.generateLevel(this.difficulty);
 
-  if(this.difficulty == Level.difficulties.EASY) {
-    var colors = ['red', 'blue'];
-    var width = 2;
-    var height = 3;
-  }
+  this._makeBoards(this.difficulty.width, this.difficulty.height);
 
-  this._makeBoards(width, height);
+  this.frontBoard.setNodes(nodes[0], this.difficulty.width, this.difficulty.height);
+  this.backBoard.setNodes(nodes[1], this.difficulty.width, this.difficulty.height);
 }
 
 Level.prototype._makeBoards = function(width, height) {
@@ -78,12 +70,6 @@ Level.prototype._makeBoards = function(width, height) {
   this.backBoard.container.position.x = 450;
   this.backBoard.container.position.y = 50;
   this.container.addChild(this.backBoard.container);
-}
-
-Level.prototype.checkStatus = function() {
-  for(var i = 0; i < this.frontBoard.nodes.length; i++) {
-
-  }
 }
 
 module.exports = Level;

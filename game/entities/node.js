@@ -1,6 +1,6 @@
 var _ = require('underscore');
 
-Node = function(game, board, x, y, gridX, gridY) {
+Node = function(game, board, gridX, gridY, x, y) {
   var _this = this;
   this.game = game;
   this.board = board;
@@ -32,8 +32,6 @@ Node = function(game, board, x, y, gridX, gridY) {
     green: { name: 'green', normal: 0x00EE00, hover: 0x00FF00 },
     blue: { name: 'blue', normal: 0x0000EE, hover: 0x0000FF}
   };
-
-  this.color = this.colors[['red', 'blue'][Math.floor(Math.random() * 2)]];
 
   this.states = {
     NORMAL: 0,
@@ -126,6 +124,18 @@ Node.prototype.getHeight = function() {
 
 Node.prototype.setColor = function(color) {
   this.color = this.colors[color];
+}
+
+Node.prototype.setBoard = function(board) {
+  this.board = board;
+}
+
+Node.prototype.setPosition = function(x, y) {
+  this.x = x;
+  this.y = y;
+
+  this.graphics.position.x = x;
+  this.graphics.position.y = y;
 }
 
 module.exports = Node;

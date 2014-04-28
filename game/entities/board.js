@@ -18,7 +18,7 @@ Board = function(game, level, width, height) {
 
   this.nodes = [];
   this.lines = [];
-  this.setup();
+  // this.setup();
 
   this.activeLine = new Line(game, 0, 0);
   this.activeLine.graphics.visible = false;
@@ -193,5 +193,23 @@ Board.prototype._isCrossingLine = function(line1, line2) {
   return (r >= 0 && r <= 1) && (s >= 0 && s <= 1);
 }
 
+Board.prototype.setNodes = function(nodes, width, height) {
+  this.width = width;
+  this.height = height;
+  this.nodes = [];
+
+  for(var i = 0; i < nodes.length; i++) {
+    var node = nodes[i];
+    nodes[i].setBoard(this);
+
+    var x = node.gridX * this.spacing + 50;
+    var y = node.gridY * this.spacing + 50;
+
+    node.setPosition(x, y);
+
+    this.container.addChild(node.graphics);
+    this.nodes.push(node);
+  }
+}
 
 module.exports = Board;

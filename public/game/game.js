@@ -20,7 +20,7 @@ Board = function(game, level, width, height) {
 
   this.nodes = [];
   this.lines = [];
-  this.setup();
+  // this.setup();
 
   this.activeLine = new Line(game, 0, 0);
   this.activeLine.graphics.visible = false;
@@ -195,26 +195,40 @@ Board.prototype._isCrossingLine = function(line1, line2) {
   return (r >= 0 && r <= 1) && (s >= 0 && s <= 1);
 }
 
+Board.prototype.setNodes = function(nodes, width, height) {
+  this.width = width;
+  this.height = height;
+  this.nodes = [];
+
+  for(var i = 0; i < nodes.length; i++) {
+    var node = nodes[i];
+    nodes[i].setBoard(this);
+
+    var x = node.gridX * this.spacing + 50;
+    var y = node.gridY * this.spacing + 50;
+
+    node.setPosition(x, y);
+
+    this.container.addChild(node.graphics);
+    this.nodes.push(node);
+  }
+}
 
 module.exports = Board;
 }).call(this,require("/home/andre/projects/ludum-dare-29/node_modules/gulp-browserify/node_modules/browserify/node_modules/insert-module-globals/node_modules/process/browser.js"),typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/entities/board.js","/entities")
-},{"./line":3,"./node":4,"/home/andre/projects/ludum-dare-29/node_modules/gulp-browserify/node_modules/browserify/node_modules/insert-module-globals/node_modules/process/browser.js":13,"buffer":9}],2:[function(require,module,exports){
+},{"./line":3,"./node":4,"/home/andre/projects/ludum-dare-29/node_modules/gulp-browserify/node_modules/browserify/node_modules/insert-module-globals/node_modules/process/browser.js":15,"buffer":11}],2:[function(require,module,exports){
 (function (process,global,Buffer,__argument0,__argument1,__argument2,__argument3,__filename,__dirname){
 var Board = require('./board');
+var Generator = require('../utils/generator');
 
 Level = function(game, difficulty) {
   this.game = game;
   this.difficulty = difficulty;
 
   this.container = new PIXI.DisplayObjectContainer();
+  this.generator = new Generator(game);
 
   this.generateLevel();
-}
-
-Level.difficulties = {
-  EASY: 0,
-  NORMAL: 1,
-  HARD: 2
 }
 
 Level.prototype.update = function(delta) {
@@ -256,17 +270,13 @@ Level.prototype.getOppositeBoard = function(board) {
 }
 
 Level.prototype.generateLevel = function() {
-  var colors = [];
-  var width = 0;
-  var height = 0;
+  console.log(this.difficulty);
+  var nodes = this.generator.generateLevel(this.difficulty);
 
-  if(this.difficulty == Level.difficulties.EASY) {
-    var colors = ['red', 'blue'];
-    var width = 2;
-    var height = 3;
-  }
+  this._makeBoards(this.difficulty.width, this.difficulty.height);
 
-  this._makeBoards(width, height);
+  this.frontBoard.setNodes(nodes[0], this.difficulty.width, this.difficulty.height);
+  this.backBoard.setNodes(nodes[1], this.difficulty.width, this.difficulty.height);
 }
 
 Level.prototype._makeBoards = function(width, height) {
@@ -282,15 +292,9 @@ Level.prototype._makeBoards = function(width, height) {
   this.container.addChild(this.backBoard.container);
 }
 
-Level.prototype.checkStatus = function() {
-  for(var i = 0; i < this.frontBoard.nodes.length; i++) {
-
-  }
-}
-
 module.exports = Level;
 }).call(this,require("/home/andre/projects/ludum-dare-29/node_modules/gulp-browserify/node_modules/browserify/node_modules/insert-module-globals/node_modules/process/browser.js"),typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/entities/level.js","/entities")
-},{"./board":1,"/home/andre/projects/ludum-dare-29/node_modules/gulp-browserify/node_modules/browserify/node_modules/insert-module-globals/node_modules/process/browser.js":13,"buffer":9}],3:[function(require,module,exports){
+},{"../utils/generator":6,"./board":1,"/home/andre/projects/ludum-dare-29/node_modules/gulp-browserify/node_modules/browserify/node_modules/insert-module-globals/node_modules/process/browser.js":15,"buffer":11}],3:[function(require,module,exports){
 (function (process,global,Buffer,__argument0,__argument1,__argument2,__argument3,__filename,__dirname){
 Line = function(game, x, y) {
   this.game = game;
@@ -344,11 +348,11 @@ Line.prototype.clone = function() {
 
 module.exports = Line;
 }).call(this,require("/home/andre/projects/ludum-dare-29/node_modules/gulp-browserify/node_modules/browserify/node_modules/insert-module-globals/node_modules/process/browser.js"),typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/entities/line.js","/entities")
-},{"/home/andre/projects/ludum-dare-29/node_modules/gulp-browserify/node_modules/browserify/node_modules/insert-module-globals/node_modules/process/browser.js":13,"buffer":9}],4:[function(require,module,exports){
+},{"/home/andre/projects/ludum-dare-29/node_modules/gulp-browserify/node_modules/browserify/node_modules/insert-module-globals/node_modules/process/browser.js":15,"buffer":11}],4:[function(require,module,exports){
 (function (process,global,Buffer,__argument0,__argument1,__argument2,__argument3,__filename,__dirname){
 var _ = require('underscore');
 
-Node = function(game, board, x, y, gridX, gridY) {
+Node = function(game, board, gridX, gridY, x, y) {
   var _this = this;
   this.game = game;
   this.board = board;
@@ -380,8 +384,6 @@ Node = function(game, board, x, y, gridX, gridY) {
     green: { name: 'green', normal: 0x00EE00, hover: 0x00FF00 },
     blue: { name: 'blue', normal: 0x0000EE, hover: 0x0000FF}
   };
-
-  this.color = this.colors[['red', 'blue'][Math.floor(Math.random() * 2)]];
 
   this.states = {
     NORMAL: 0,
@@ -476,19 +478,32 @@ Node.prototype.setColor = function(color) {
   this.color = this.colors[color];
 }
 
+Node.prototype.setBoard = function(board) {
+  this.board = board;
+}
+
+Node.prototype.setPosition = function(x, y) {
+  this.x = x;
+  this.y = y;
+
+  this.graphics.position.x = x;
+  this.graphics.position.y = y;
+}
+
 module.exports = Node;
 }).call(this,require("/home/andre/projects/ludum-dare-29/node_modules/gulp-browserify/node_modules/browserify/node_modules/insert-module-globals/node_modules/process/browser.js"),typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/entities/node.js","/entities")
-},{"/home/andre/projects/ludum-dare-29/node_modules/gulp-browserify/node_modules/browserify/node_modules/insert-module-globals/node_modules/process/browser.js":13,"buffer":9,"underscore":14}],5:[function(require,module,exports){
+},{"/home/andre/projects/ludum-dare-29/node_modules/gulp-browserify/node_modules/browserify/node_modules/insert-module-globals/node_modules/process/browser.js":15,"buffer":11,"underscore":16}],5:[function(require,module,exports){
 (function (process,global,Buffer,__argument0,__argument1,__argument2,__argument3,__filename,__dirname){
 var Gameloop = require('gameloop');
 
 var Level = require('./entities/level');
 var Grid = require('./utils/grid');
+var Generator = require('./utils/generator');
 
 Game = function() {
   var _this = this;
 
-  this.renderer = new PIXI.CanvasRenderer(800, 400);
+  this.renderer = new PIXI.CanvasRenderer(800, 800);
 
   this.loop = new Gameloop({
     renderer: this.renderer
@@ -519,7 +534,7 @@ Game.prototype.setup = function() {
   this.grid = new Grid(this);
   this.stage.addChild(this.grid.graphics);
 
-  this.level = new Level(this, Level.difficulties.EASY);
+  this.level = new Level(this, Generator.difficulties.MEDIUM);
   this.stage.addChild(this.level.container);
 }
 
@@ -534,8 +549,263 @@ Game.prototype.draw = function(renderer, delta) {
 }
 
 module.exports = Game;
-}).call(this,require("/home/andre/projects/ludum-dare-29/node_modules/gulp-browserify/node_modules/browserify/node_modules/insert-module-globals/node_modules/process/browser.js"),typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/fake_42ebee11.js","/")
-},{"./entities/level":2,"./utils/grid":6,"/home/andre/projects/ludum-dare-29/node_modules/gulp-browserify/node_modules/browserify/node_modules/insert-module-globals/node_modules/process/browser.js":13,"buffer":9,"gameloop":7}],6:[function(require,module,exports){
+}).call(this,require("/home/andre/projects/ludum-dare-29/node_modules/gulp-browserify/node_modules/browserify/node_modules/insert-module-globals/node_modules/process/browser.js"),typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/fake_30e7eb34.js","/")
+},{"./entities/level":2,"./utils/generator":6,"./utils/grid":7,"/home/andre/projects/ludum-dare-29/node_modules/gulp-browserify/node_modules/browserify/node_modules/insert-module-globals/node_modules/process/browser.js":15,"buffer":11,"gameloop":9}],6:[function(require,module,exports){
+(function (process,global,Buffer,__argument0,__argument1,__argument2,__argument3,__filename,__dirname){
+var Solver = require('./solver');
+var Board = require('../entities/board');
+
+Generator = function(game) {
+  this.game = game;
+  this.solver = new Solver(game);
+}
+
+Generator.difficulties = {
+  EASY: { width: 2, height: 3, color: 2 },
+  MEDIUM: { width: 3, height: 4, colors: 3 },
+  HARD: { width: 4, height: 5, colors: 4 }
+}
+
+Generator.prototype.generateLevel = function(difficulty) {
+  var colors = ['red', 'blue', 'green', 'yellow'];
+
+  var width = difficulty.width;
+  var height = difficulty.height;
+  var colors = colors.slice(0, difficulty.colors);
+
+  var connections = false;
+  while(!connections) {
+    connections = this._makeConnections(width, height);
+  }
+
+  var nodes = this._makeBoards(colors, width, height, connections[0], connections[1]);
+
+  console.log(connections);
+  console.log(nodes);
+
+  return nodes;
+}
+
+Generator.prototype._makeConnections = function(width, height) {
+  this.usedColors = [];
+
+  var frontNodes = [];
+  var backNodes = [];
+
+  var frontLines = [];
+  var backLines = [];
+
+  var activeNodes = frontNodes;
+  var activeLines = frontLines;
+
+  var success = true;
+
+  var connections = width * height / 2;
+
+  for(var i = 0; i < width; i++) {
+    for(var j = 0; j < height; j++) {
+      frontNodes.push({ x: i, y: j, open: true });
+      backNodes.push({ x: i, y: j, open: true });
+    }
+  }
+
+  var start = this._randomFromArray(frontNodes);
+  var end;
+
+  var panic = 0;
+
+  while(frontLines.length < connections && backLines.length < connections) {
+    panic += 1;
+
+    // randomly search for any node to make a valid connection with
+    do {
+      end = this._randomFromArray(activeNodes);
+      panic += 1;
+
+      if(panic > 500) {
+        success = false;
+        break;
+      }
+    } 
+    while(!this._isValidLine(activeLines, start, end));
+
+    if(panic > 500) {
+      success = false;
+      break;
+    }
+
+    // close the nodes
+    start.open = false;
+    end.open = false;
+
+    activeLines.push({ begin: start, end: end });
+
+    // switch active side
+    if(activeLines == frontLines) {
+      var index = activeNodes.indexOf(end);
+      var start = backNodes[index];
+      var end = null;
+
+      activeLines = backLines;
+      activeNodes = backNodes;
+    }
+    else {
+      var index = activeNodes.indexOf(end);
+      var start = frontNodes[index];
+      var end = null;
+
+      activeLines = frontLines;
+      activeNodes = frontNodes;
+    }
+  }
+
+  if(success) {
+    return [frontLines, backLines];
+  }
+  else {
+    return false;
+  }
+}
+
+Generator.prototype._makeBoards = function(colors, width, height, frontLines, backLines) {
+  var frontNodes = [];
+  var backNodes = [];
+
+  for(var j = 0; j < height; j++) {
+    for(var i = 0; i < width; i++) {
+      var frontNode = new Node(this.game, null, i, j);
+      frontNode.setColor(this._randomFromArray(colors));
+
+      var backNode = new Node(this.game, null, i, j);
+      backNode.setColor(this._randomFromArray(colors));
+
+      frontNodes.push(frontNode);
+      backNodes.push(backNode);
+    }
+  }
+
+  for(var i = 0; i < frontLines.length; i++) {
+    var begin = frontLines[i].begin;
+    var end = frontLines[i].end;
+
+    var color = this._randomFromArray(colors);
+
+    frontNodes[(begin.y * width + begin.x)].setColor(color);
+    frontNodes[(end.y * width + end.x)].setColor(color);
+  }
+
+  for(var i = 0; i < backLines.length; i++) {
+    var begin = backLines[i].begin;
+    var end = backLines[i].end;
+
+    var color = this._getRandomColor(colors);
+
+    backNodes[(begin.y * width + begin.x)].setColor(color);
+    backNodes[(end.y * width + end.x)].setColor(color);
+  }
+
+  return [frontNodes, backNodes];
+}
+
+Generator.prototype._randomInt = function(min, max) {
+  return Math.floor(Math.random() * (max - min + 1) + min);
+}
+
+Generator.prototype._randomFromArray = function(items) {
+  return items[Math.floor(Math.random() * items.length)];
+}
+
+Generator.prototype._shuffleArray = function(o) {
+  for(var j, x, i = o.length; i; j = Math.floor(Math.random() * i), x = o[--i], o[i] = o[j], o[j] = x);
+  return o;
+}
+
+Generator.prototype._getRandomColor = function(colors) {
+  var colors = this._shuffleArray(colors.slice(0)); // clone and shuffle
+
+  if(this.usedColors.length != colors.length) {
+    for(var i = 0; i < colors.length; i++) {
+      if(this.usedColors.indexOf(colors[i]) == -1) {
+        this.usedColors.push(colors[i]);
+        return colors[i];
+      }
+    }
+  }
+
+  return colors[0];
+}
+
+Generator.prototype._isValidLine = function(lines, beginNode, endNode) {
+  if(beginNode == null || endNode == null) {
+    return false;
+  }
+
+  if(!beginNode.open || !endNode.open) {
+    return false;
+  }
+
+  if(!this._isValidNodeConnection(beginNode, endNode)) {
+    return false; 
+  }
+
+  if(this._isCrossingLines(lines, beginNode, endNode)) {
+    return false; 
+  }
+
+
+  return true;
+}
+
+Generator.prototype._isValidNodeConnection = function(beginNode, endNode) {
+  var x = endNode.x - beginNode.x;
+  var y = endNode.y - beginNode.y;
+
+  if(x == -1 || x == 1 || y == -1 || y == 1) {
+    return true;
+  }
+  else {
+    return false;
+  }
+}
+
+Generator.prototype._isCrossingLines = function(lines, beginNode, endNode) {
+  var line = new Line(this.game, 0, 0);
+  line.setBegin(beginNode.x, beginNode.y);
+  line.setEnd(endNode.x, endNode.y);
+
+  for(var i = 0; i < lines.length; i++) {
+    if(this._isCrossingLine(line, lines[i])) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
+Generator.prototype._isCrossingLine = function(line1, line2) {
+  // http://gamedev.stackexchange.com/a/26022
+  var a = line1.begin;
+  var b = line1.end;
+  var c = line2.begin;
+  var d = line2.end;
+
+  var denominator = ((b.x - a.x) * (d.y - c.y)) - ((b.y - a.y) * (d.x - c.x));
+  var numerator1 = ((a.y - c.y) * (d.x - c.x)) - ((a.x - c.x) * (d.y - c.y));
+  var numerator2 = ((a.y - c.y) * (b.x - a.x)) - ((a.x - c.x) * (b.y - a.y));
+
+  if(denominator == 0) {
+    return numerator1 == 0 && numerator2 == 0;
+  }
+
+  var r = numerator1 / denominator;
+  var s = numerator2 / denominator;
+
+  return (r >= 0 && r <= 1) && (s >= 0 && s <= 1);
+}
+
+module.exports = Generator;
+}).call(this,require("/home/andre/projects/ludum-dare-29/node_modules/gulp-browserify/node_modules/browserify/node_modules/insert-module-globals/node_modules/process/browser.js"),typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/utils/generator.js","/utils")
+},{"../entities/board":1,"./solver":8,"/home/andre/projects/ludum-dare-29/node_modules/gulp-browserify/node_modules/browserify/node_modules/insert-module-globals/node_modules/process/browser.js":15,"buffer":11}],7:[function(require,module,exports){
 (function (process,global,Buffer,__argument0,__argument1,__argument2,__argument3,__filename,__dirname){
 Grid = function(game) {
   this.game = game;
@@ -562,7 +832,27 @@ Grid.prototype.draw = function(renderer, delta) {
 
 module.exports = Grid;
 }).call(this,require("/home/andre/projects/ludum-dare-29/node_modules/gulp-browserify/node_modules/browserify/node_modules/insert-module-globals/node_modules/process/browser.js"),typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/utils/grid.js","/utils")
-},{"/home/andre/projects/ludum-dare-29/node_modules/gulp-browserify/node_modules/browserify/node_modules/insert-module-globals/node_modules/process/browser.js":13,"buffer":9}],7:[function(require,module,exports){
+},{"/home/andre/projects/ludum-dare-29/node_modules/gulp-browserify/node_modules/browserify/node_modules/insert-module-globals/node_modules/process/browser.js":15,"buffer":11}],8:[function(require,module,exports){
+(function (process,global,Buffer,__argument0,__argument1,__argument2,__argument3,__filename,__dirname){
+Solver = function(game) {
+  this.level = null;
+}
+
+Solver.prototype.solve = function(frontBoard, backBoard) {
+  
+}
+
+Solver.prototype.nextMove = function() {
+
+}
+
+Solver.prototype.setLevel = function(level) {
+  this.level = level;
+}
+
+module.exports = Solver;
+}).call(this,require("/home/andre/projects/ludum-dare-29/node_modules/gulp-browserify/node_modules/browserify/node_modules/insert-module-globals/node_modules/process/browser.js"),typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/utils/solver.js","/utils")
+},{"/home/andre/projects/ludum-dare-29/node_modules/gulp-browserify/node_modules/browserify/node_modules/insert-module-globals/node_modules/process/browser.js":15,"buffer":11}],9:[function(require,module,exports){
 (function (process,global,Buffer,__argument0,__argument1,__argument2,__argument3,__filename,__dirname){
 var EventEmitter = require('events').EventEmitter;
 var inherits = require('inherits');
@@ -712,7 +1002,7 @@ Game.prototype.timestamp = function() {
   return global.performance && global.performance.now ? global.performance.now() : new Date().getTime();
 }
 }).call(this,require("/home/andre/projects/ludum-dare-29/node_modules/gulp-browserify/node_modules/browserify/node_modules/insert-module-globals/node_modules/process/browser.js"),typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/../node_modules/gameloop/index.js","/../node_modules/gameloop")
-},{"/home/andre/projects/ludum-dare-29/node_modules/gulp-browserify/node_modules/browserify/node_modules/insert-module-globals/node_modules/process/browser.js":13,"buffer":9,"events":12,"inherits":8}],8:[function(require,module,exports){
+},{"/home/andre/projects/ludum-dare-29/node_modules/gulp-browserify/node_modules/browserify/node_modules/insert-module-globals/node_modules/process/browser.js":15,"buffer":11,"events":14,"inherits":10}],10:[function(require,module,exports){
 (function (process,global,Buffer,__argument0,__argument1,__argument2,__argument3,__filename,__dirname){
 if (typeof Object.create === 'function') {
   // implementation from standard node.js 'util' module
@@ -739,7 +1029,7 @@ if (typeof Object.create === 'function') {
 }
 
 }).call(this,require("/home/andre/projects/ludum-dare-29/node_modules/gulp-browserify/node_modules/browserify/node_modules/insert-module-globals/node_modules/process/browser.js"),typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/../node_modules/gameloop/node_modules/inherits/inherits_browser.js","/../node_modules/gameloop/node_modules/inherits")
-},{"/home/andre/projects/ludum-dare-29/node_modules/gulp-browserify/node_modules/browserify/node_modules/insert-module-globals/node_modules/process/browser.js":13,"buffer":9}],9:[function(require,module,exports){
+},{"/home/andre/projects/ludum-dare-29/node_modules/gulp-browserify/node_modules/browserify/node_modules/insert-module-globals/node_modules/process/browser.js":15,"buffer":11}],11:[function(require,module,exports){
 (function (process,global,Buffer,__argument0,__argument1,__argument2,__argument3,__filename,__dirname){
 /*!
  * The buffer module from node.js, for the browser.
@@ -1852,7 +2142,7 @@ function assert (test, message) {
 }
 
 }).call(this,require("/home/andre/projects/ludum-dare-29/node_modules/gulp-browserify/node_modules/browserify/node_modules/insert-module-globals/node_modules/process/browser.js"),typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/../node_modules/gulp-browserify/node_modules/browserify/node_modules/buffer/index.js","/../node_modules/gulp-browserify/node_modules/browserify/node_modules/buffer")
-},{"/home/andre/projects/ludum-dare-29/node_modules/gulp-browserify/node_modules/browserify/node_modules/insert-module-globals/node_modules/process/browser.js":13,"base64-js":10,"buffer":9,"ieee754":11}],10:[function(require,module,exports){
+},{"/home/andre/projects/ludum-dare-29/node_modules/gulp-browserify/node_modules/browserify/node_modules/insert-module-globals/node_modules/process/browser.js":15,"base64-js":12,"buffer":11,"ieee754":13}],12:[function(require,module,exports){
 (function (process,global,Buffer,__argument0,__argument1,__argument2,__argument3,__filename,__dirname){
 var lookup = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/';
 
@@ -1977,7 +2267,7 @@ var lookup = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/';
 }())
 
 }).call(this,require("/home/andre/projects/ludum-dare-29/node_modules/gulp-browserify/node_modules/browserify/node_modules/insert-module-globals/node_modules/process/browser.js"),typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/../node_modules/gulp-browserify/node_modules/browserify/node_modules/buffer/node_modules/base64-js/lib/b64.js","/../node_modules/gulp-browserify/node_modules/browserify/node_modules/buffer/node_modules/base64-js/lib")
-},{"/home/andre/projects/ludum-dare-29/node_modules/gulp-browserify/node_modules/browserify/node_modules/insert-module-globals/node_modules/process/browser.js":13,"buffer":9}],11:[function(require,module,exports){
+},{"/home/andre/projects/ludum-dare-29/node_modules/gulp-browserify/node_modules/browserify/node_modules/insert-module-globals/node_modules/process/browser.js":15,"buffer":11}],13:[function(require,module,exports){
 (function (process,global,Buffer,__argument0,__argument1,__argument2,__argument3,__filename,__dirname){
 exports.read = function(buffer, offset, isLE, mLen, nBytes) {
   var e, m,
@@ -2065,7 +2355,7 @@ exports.write = function(buffer, value, offset, isLE, mLen, nBytes) {
 };
 
 }).call(this,require("/home/andre/projects/ludum-dare-29/node_modules/gulp-browserify/node_modules/browserify/node_modules/insert-module-globals/node_modules/process/browser.js"),typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/../node_modules/gulp-browserify/node_modules/browserify/node_modules/buffer/node_modules/ieee754/index.js","/../node_modules/gulp-browserify/node_modules/browserify/node_modules/buffer/node_modules/ieee754")
-},{"/home/andre/projects/ludum-dare-29/node_modules/gulp-browserify/node_modules/browserify/node_modules/insert-module-globals/node_modules/process/browser.js":13,"buffer":9}],12:[function(require,module,exports){
+},{"/home/andre/projects/ludum-dare-29/node_modules/gulp-browserify/node_modules/browserify/node_modules/insert-module-globals/node_modules/process/browser.js":15,"buffer":11}],14:[function(require,module,exports){
 (function (process,global,Buffer,__argument0,__argument1,__argument2,__argument3,__filename,__dirname){
 // Copyright Joyent, Inc. and other Node contributors.
 //
@@ -2369,7 +2659,7 @@ function isUndefined(arg) {
 }
 
 }).call(this,require("/home/andre/projects/ludum-dare-29/node_modules/gulp-browserify/node_modules/browserify/node_modules/insert-module-globals/node_modules/process/browser.js"),typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/../node_modules/gulp-browserify/node_modules/browserify/node_modules/events/events.js","/../node_modules/gulp-browserify/node_modules/browserify/node_modules/events")
-},{"/home/andre/projects/ludum-dare-29/node_modules/gulp-browserify/node_modules/browserify/node_modules/insert-module-globals/node_modules/process/browser.js":13,"buffer":9}],13:[function(require,module,exports){
+},{"/home/andre/projects/ludum-dare-29/node_modules/gulp-browserify/node_modules/browserify/node_modules/insert-module-globals/node_modules/process/browser.js":15,"buffer":11}],15:[function(require,module,exports){
 (function (process,global,Buffer,__argument0,__argument1,__argument2,__argument3,__filename,__dirname){
 // shim for using process in browser
 
@@ -2433,7 +2723,7 @@ process.chdir = function (dir) {
 };
 
 }).call(this,require("/home/andre/projects/ludum-dare-29/node_modules/gulp-browserify/node_modules/browserify/node_modules/insert-module-globals/node_modules/process/browser.js"),typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/../node_modules/gulp-browserify/node_modules/browserify/node_modules/insert-module-globals/node_modules/process/browser.js","/../node_modules/gulp-browserify/node_modules/browserify/node_modules/insert-module-globals/node_modules/process")
-},{"/home/andre/projects/ludum-dare-29/node_modules/gulp-browserify/node_modules/browserify/node_modules/insert-module-globals/node_modules/process/browser.js":13,"buffer":9}],14:[function(require,module,exports){
+},{"/home/andre/projects/ludum-dare-29/node_modules/gulp-browserify/node_modules/browserify/node_modules/insert-module-globals/node_modules/process/browser.js":15,"buffer":11}],16:[function(require,module,exports){
 (function (process,global,Buffer,__argument0,__argument1,__argument2,__argument3,__filename,__dirname){
 //     Underscore.js 1.6.0
 //     http://underscorejs.org
@@ -3780,4 +4070,4 @@ process.chdir = function (dir) {
 }).call(this);
 
 }).call(this,require("/home/andre/projects/ludum-dare-29/node_modules/gulp-browserify/node_modules/browserify/node_modules/insert-module-globals/node_modules/process/browser.js"),typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/../node_modules/underscore/underscore.js","/../node_modules/underscore")
-},{"/home/andre/projects/ludum-dare-29/node_modules/gulp-browserify/node_modules/browserify/node_modules/insert-module-globals/node_modules/process/browser.js":13,"buffer":9}]},{},[5])
+},{"/home/andre/projects/ludum-dare-29/node_modules/gulp-browserify/node_modules/browserify/node_modules/insert-module-globals/node_modules/process/browser.js":15,"buffer":11}]},{},[5])

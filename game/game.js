@@ -2,11 +2,12 @@ var Gameloop = require('gameloop');
 
 var Level = require('./entities/level');
 var Grid = require('./utils/grid');
+var Generator = require('./utils/generator');
 
 Game = function() {
   var _this = this;
 
-  this.renderer = new PIXI.CanvasRenderer(800, 400);
+  this.renderer = new PIXI.CanvasRenderer(800, 800);
 
   this.loop = new Gameloop({
     renderer: this.renderer
@@ -37,7 +38,7 @@ Game.prototype.setup = function() {
   this.grid = new Grid(this);
   this.stage.addChild(this.grid.graphics);
 
-  this.level = new Level(this, Level.difficulties.EASY);
+  this.level = new Level(this, Generator.difficulties.MEDIUM);
   this.stage.addChild(this.level.container);
 }
 
