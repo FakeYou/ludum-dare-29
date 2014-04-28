@@ -23,8 +23,10 @@ $(document).ready(function() {
     }
   });
 
-  preload.loadFile('lib/pixi.min.js');
-  preload.loadFile('game/game.js');
+  preload.loadFile('public/lib/pixi.min.js');
+  preload.loadFile('public/lib/tweenLite.min.js');
+  preload.loadFile('public/lib/tweenLiteEasing.min.js');
+  preload.loadFile('public/game/game.js');
 
 });
 },{}]},{},[1])
