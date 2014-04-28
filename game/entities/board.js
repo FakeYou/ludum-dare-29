@@ -35,7 +35,15 @@ Board = function(game, level, width, height) {
 Board.prototype.setup = function() {
   for(var x = 0; x < this.width; x++) {
     for(var y = 0; y < this.height; y++) {
-      var node = new Node(this.game, this, x * this.spacing + 50, y * this.spacing + 50);
+      var node = new Node(
+        this.game,              // reference to parent game
+        this,                   // reference to parent board
+        x * this.spacing + 50,  // pixel x coord on the board
+        y * this.spacing + 50,  // pixel y coord on the board
+        x,                      // grid x coord on the board
+        y                       // grid y coord on the board
+      );
+
       this.container.addChild(node.graphics);
       this.nodes.push(node);
     }
@@ -99,7 +107,7 @@ Board.prototype.onNodePress = function(node) {
     this.activeLine.setEnd(node.x, node.y);
     this.activeLine.graphics.visible = true;
   }
-  else if(this.activeNode.color.name == node.color.name) {
+  else if(this._isValidLine(this.activeNode, node)) {
     this.activeNode.selected = false;
     this.activeNode.open = false;
     this.activeNode = null;
@@ -112,5 +120,78 @@ Board.prototype.onNodePress = function(node) {
     oppositeBoard.onNodePress(oppositeNode);
   }
 }
+
+Board.prototype._isValidLine = function(beginNode, endNode) {
+  if(beginNode.color.name !== endNode.color.name) {
+    console.log('[Board/_isValidLine] - not a valid line: different color');
+    return false;
+  }
+
+  if(beginNode.board !== endNode.board) {
+    console.log('[Board/_isValidLine] - not a valid line: different board');
+    return false;
+  }
+
+  if(!this._isValidNodeConnection(beginNode, endNode)) {
+    console.log('[Board/_isValidLine] - not a valid line: invalid node connection');
+    return false; 
+  }
+
+  if(this._isCrossingLines(beginNode, endNode)) {
+    console.log('[Board/_isValidLine] - not a valid line: crossing other line');
+    return false; 
+  }
+
+
+  return true;
+}
+
+Board.prototype._isValidNodeConnection = function(beginNode, endNode) {
+  var x = endNode.gridX - beginNode.gridX;
+  var y = endNode.gridY - beginNode.gridY;
+
+  if(x == -1 || x == 1 || y == -1 || y == 1) {
+    return true;
+  }
+  else {
+    return false;
+  }
+}
+
+Board.prototype._isCrossingLines = function(beginNode, endNode) {
+  var line = new Line(this.game, 0, 0);
+  line.setBegin(beginNode.x, beginNode.y);
+  line.setEnd(endNode.x, endNode.y);
+
+  for(var i = 0; i < this.lines.length; i++) {
+    if(this._isCrossingLine(line, this.lines[i])) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
+Board.prototype._isCrossingLine = function(line1, line2) {
+  // http://gamedev.stackexchange.com/a/26022
+  var a = line1.begin;
+  var b = line1.end;
+  var c = line2.begin;
+  var d = line2.end;
+
+  var denominator = ((b.x - a.x) * (d.y - c.y)) - ((b.y - a.y) * (d.x - c.x));
+  var numerator1 = ((a.y - c.y) * (d.x - c.x)) - ((a.x - c.x) * (d.y - c.y));
+  var numerator2 = ((a.y - c.y) * (b.x - a.x)) - ((a.x - c.x) * (b.y - a.y));
+
+  if(denominator == 0) {
+    return numerator1 == 0 && numerator2 == 0;
+  }
+
+  var r = numerator1 / denominator;
+  var s = numerator2 / denominator;
+
+  return (r >= 0 && r <= 1) && (s >= 0 && s <= 1);
+}
+
 
 module.exports = Board;

@@ -1,12 +1,15 @@
 var _ = require('underscore');
 
-Node = function(game, board, x, y) {
+Node = function(game, board, x, y, gridX, gridY) {
   var _this = this;
   this.game = game;
   this.board = board;
 
   this.x = x;
   this.y = y;
+
+  this.gridX = gridX;
+  this.gridY = gridY;
 
   this.graphics = new PIXI.Graphics();
 
@@ -30,7 +33,7 @@ Node = function(game, board, x, y) {
     blue: { name: 'blue', normal: 0x0000EE, hover: 0x0000FF}
   };
 
-  this.color = this.colors[['red', 'green', 'blue'][Math.floor(Math.random() * 3)]];
+  this.color = this.colors[['red', 'blue'][Math.floor(Math.random() * 2)]];
 
   this.states = {
     NORMAL: 0,
@@ -119,6 +122,10 @@ Node.prototype.getWidth = function() {
 
 Node.prototype.getHeight = function() {
   return this.radius * 2;
+}
+
+Node.prototype.setColor = function(color) {
+  this.color = this.colors[color];
 }
 
 module.exports = Node;

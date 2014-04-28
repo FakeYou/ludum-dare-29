@@ -37,7 +37,7 @@ Game.prototype.setup = function() {
   this.grid = new Grid(this);
   this.stage.addChild(this.grid.graphics);
 
-  this.level = new Level(this, 1);
+  this.level = new Level(this, Level.difficulties.EASY);
   this.stage.addChild(this.level.container);
 }
 
