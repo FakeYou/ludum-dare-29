@@ -43,6 +43,7 @@ Game.prototype.setup = function() {
 }
 
 Game.prototype.update = function(delta) {
+  this.level.update(delta);
 }
 
 Game.prototype.draw = function(renderer, delta) {

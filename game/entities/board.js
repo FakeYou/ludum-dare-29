@@ -13,7 +13,7 @@ Board = function(game, level, width, height) {
   this.container.addChild(this.graphics);
 
   this.width = width;
-  this.height = height
+  this.height = height;
   this.spacing = 100;
 
   this.nodes = [];
@@ -86,6 +86,10 @@ Board.prototype.getHeight = function() {
 
 Board.prototype.setActive = function(value) {
   this.active = value;
+}
+
+Board.prototype.setVisible = function(value) {
+  this.container.visible = value;
 }
 
 Board.prototype.saveLine = function(line) {

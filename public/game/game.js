@@ -15,7 +15,7 @@ Board = function(game, level, width, height) {
   this.container.addChild(this.graphics);
 
   this.width = width;
-  this.height = height
+  this.height = height;
   this.spacing = 100;
 
   this.nodes = [];
@@ -88,6 +88,10 @@ Board.prototype.getHeight = function() {
 
 Board.prototype.setActive = function(value) {
   this.active = value;
+}
+
+Board.prototype.setVisible = function(value) {
+  this.container.visible = value;
 }
 
 Board.prototype.saveLine = function(line) {
@@ -229,10 +233,11 @@ Level = function(game, difficulty) {
   this.generator = new Generator(game);
 
   this.generateLevel();
+
+  this.tween = 0.2;
 }
 
 Level.prototype.update = function(delta) {
-
 }
 
 Level.prototype.draw = function(renderer, delta) {
@@ -241,13 +246,51 @@ Level.prototype.draw = function(renderer, delta) {
 }
 
 Level.prototype.switchBoard = function() {
+  var _this = this;
+
   if(this.frontBoard.active) {
     this.frontBoard.setActive(false);
-    this.backBoard.setActive(true);
+    this.backBoard.setActive(false);
+
+    TweenLite.to(this.frontBoard.container.scale, this.tween, { 
+      x: 0, 
+      ease: Power2.easeIn,
+      onComplete: function() {
+        _this.frontBoard.setVisible(false);
+        _this.backBoard.setVisible(true);
+      }
+    });
+
+    TweenLite.to(this.backBoard.container.scale, this.tween, { 
+      x: -1, 
+      delay: this.tween,
+      ease: Power2.easeOut,
+      onComplete: function() {
+        _this.backBoard.setActive(true);
+      }
+    });
   }
   else {
-    this.frontBoard.setActive(true);
+    this.frontBoard.setActive(false);
     this.backBoard.setActive(false);
+
+    TweenLite.to(this.backBoard.container.scale, this.tween, { 
+      x: 0, 
+      ease: Power2.easeIn,
+      onComplete: function() {
+        _this.frontBoard.setVisible(true);
+        _this.backBoard.setVisible(false);
+      }
+    });
+
+    TweenLite.to(this.frontBoard.container.scale, this.tween, { 
+      x: 1, 
+      delay: this.tween,
+      ease: Power2.easeOut,
+      onComplete: function() {
+        _this.frontBoard.setActive(true);
+      }
+    });
   }
 }
 
@@ -270,7 +313,6 @@ Level.prototype.getOppositeBoard = function(board) {
 }
 
 Level.prototype.generateLevel = function() {
-  console.log(this.difficulty);
   var nodes = this.generator.generateLevel(this.difficulty);
 
   this._makeBoards(this.difficulty.width, this.difficulty.height);
@@ -281,14 +323,20 @@ Level.prototype.generateLevel = function() {
 
 Level.prototype._makeBoards = function(width, height) {
   this.frontBoard = new Board(game, this, width, height);
-  this.frontBoard.container.position.x = 50;
+  this.frontBoard.container.position.x = 50 + this.frontBoard.getWidth() / 2;
   this.frontBoard.container.position.y = 50;
+  this.frontBoard.container.pivot.x = this.frontBoard.getWidth() / 2;
   this.frontBoard.setActive(true);
+  this.frontBoard.setVisible(true);
   this.container.addChild(this.frontBoard.container);
 
   this.backBoard = new Board(game, this, width, height);
-  this.backBoard.container.position.x = 450;
+  this.backBoard.container.position.x = 50 + this.backBoard.getWidth() / 2;
   this.backBoard.container.position.y = 50;
+  this.backBoard.container.pivot.x = this.backBoard.getWidth() / 2;
+  this.backBoard.setActive(false);
+  this.backBoard.setVisible(true);
+  this.backBoard.container.scale.x = 0;
   this.container.addChild(this.backBoard.container);
 }
 
@@ -539,6 +587,7 @@ Game.prototype.setup = function() {
 }
 
 Game.prototype.update = function(delta) {
+  this.level.update(delta);
 }
 
 Game.prototype.draw = function(renderer, delta) {
@@ -549,7 +598,7 @@ Game.prototype.draw = function(renderer, delta) {
 }
 
 module.exports = Game;
-}).call(this,require("/home/andre/projects/ludum-dare-29/node_modules/gulp-browserify/node_modules/browserify/node_modules/insert-module-globals/node_modules/process/browser.js"),typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/fake_30e7eb34.js","/")
+}).call(this,require("/home/andre/projects/ludum-dare-29/node_modules/gulp-browserify/node_modules/browserify/node_modules/insert-module-globals/node_modules/process/browser.js"),typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/fake_441c30ff.js","/")
 },{"./entities/level":2,"./utils/generator":6,"./utils/grid":7,"/home/andre/projects/ludum-dare-29/node_modules/gulp-browserify/node_modules/browserify/node_modules/insert-module-globals/node_modules/process/browser.js":15,"buffer":11,"gameloop":9}],6:[function(require,module,exports){
 (function (process,global,Buffer,__argument0,__argument1,__argument2,__argument3,__filename,__dirname){
 var Solver = require('./solver');
@@ -579,9 +628,6 @@ Generator.prototype.generateLevel = function(difficulty) {
   }
 
   var nodes = this._makeBoards(colors, width, height, connections[0], connections[1]);
-
-  console.log(connections);
-  console.log(nodes);
 
   return nodes;
 }

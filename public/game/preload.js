@@ -24,6 +24,8 @@ $(document).ready(function() {
   });
 
   preload.loadFile('lib/pixi.min.js');
+  preload.loadFile('lib/tweenLite.min.js');
+  preload.loadFile('lib/tweenLiteEasing.min.js');
   preload.loadFile('game/game.js');
 
 });

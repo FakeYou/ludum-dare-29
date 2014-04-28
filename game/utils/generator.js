@@ -26,9 +26,6 @@ Generator.prototype.generateLevel = function(difficulty) {
 
   var nodes = this._makeBoards(colors, width, height, connections[0], connections[1]);
 
-  console.log(connections);
-  console.log(nodes);
-
   return nodes;
 }
 
